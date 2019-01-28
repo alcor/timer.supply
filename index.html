@@ -1,0 +1,192 @@
+<style type="text/css">
+	body {
+  text-align:center;
+  top:50%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  height:100vh;
+  margin:0;
+  padding:4vw;
+  box-sizing:border-box;
+  
+}
+* {
+  font-family:"Courier", monospace;
+}
+body.done {
+  background:red;
+  background:url(https://i.gifer.com/KDyT.gif) center / cover no-repeat;
+}
+
+input {
+  font-size:20vw;
+  text-align:center;
+  border:0;
+  padding:0;
+  background-color:transparent;
+  width:100%;
+}
+#underline {
+  border-bottom:1.5vmin solid rgba(0,0,0,0.0);
+}
+body.edit #underline {
+  border-bottom:1.5vmin solid blue;
+}
+body.countdown input {
+  animation: pulse 500ms infinite;
+  animation-timing-function: ease-out;
+  animation-direction: alternate;
+}
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  100% { opacity: 1.0; }
+}
+
+input:focus {
+  outline-color: transparent;
+  outline-style: none;
+}
+
+body.countdown .recent, 
+body.done .recent {
+  opacity:0.0;
+  pointer-events:none;
+}
+.recent {
+  font-size:4vmin;
+  font-weight:bold;
+  display:inline-block;
+  padding:0.5vmin;
+  cursor:pointer;
+  opacity:0.2;
+  transition: opacity 200ms;
+}
+
+body.recent:hover {
+  opacity:0.6;
+}
+</style>
+
+
+<div id="hint"></div>
+<input id="countdown" type="text" placeholder="05m00s" autocomplete="off" value="">
+<div id="underline"></div>
+<div id="recents">
+  <span class="recent" onclick="preset(this);">5m</span>
+  <span class="recent" onclick="preset(this);">10m</span>
+  <span class="recent" onclick="preset(this);">15m</span>
+  <span class="recent" onclick="preset(this);">20m</span>
+  <span class="recent" onclick="preset(this);">30m</span>
+  <span class="recent" onclick="preset(this);">45m</span>
+  <span class="recent" onclick="preset(this);">60m</span>
+</div>
+
+
+
+<script type="text/javascript">
+	
+
+var input = document.querySelector("input");
+input.onfocus = function() {
+  clear();
+  this.setSelectionRange(0, 9999);
+  document.body.className = "edit"
+}
+
+
+
+input.onblur = function() {
+   document.body.className = "";
+}
+
+input.onkeypress = function (e) {
+  if (e.which === 13) {
+    e.target.blur();
+    countdown(e.target.value);
+  }
+}
+
+function preset(input) {
+  console.log(input);
+  countdown(input.innerText);
+}
+
+var interval;
+var timeout;
+var endTime;
+
+function clear() {
+  clearTimeout(timeout);
+  clearInterval(interval);
+  document.body.className = "";
+}
+
+var lastValue = ""
+function countdown(value) {
+  lastValue = value;
+    history.pushState(null, null, '#' + value);
+
+  var match = value.match(/^ *(?:([\d\.]+)|(?:([\d\.]*)[:m] *)?(?:(\d+)[s]?)?) *$/);
+  var showSeconds = match[3] != undefined;
+  var minutes = parseFloat(match[2]) || parseFloat(match[1]) || 0
+  
+  var seconds = parseFloat(match[3]) || 0
+  console.log("starting", minutes, seconds)
+  var duration = ((minutes * 60) + seconds) * 1000;
+  
+  if (duration == 0) duration = 5 * 60 * 1000;
+  
+  var timestamp = new Date().getTime() + duration; 
+  timeout = setTimeout(function() {
+    input.value = lastValue
+    clear();
+       document.body.style.background = ""
+    document.body.className = "done";
+  }, duration)
+  
+  var update = function() {
+    var now = new Date()
+    var remaining = (timestamp - now.getTime())
+    var seconds = Math.round(remaining / 1000) ;
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60
+    if (seconds < 10) seconds = "0" + seconds;
+    
+    var timeString = ""
+    if (minutes > 0) timeString += minutes + "m";
+    if (showSeconds || minutes < 1) timeString += seconds + "s";
+    input.value = timeString;
+    var startDeg = ((now.getSeconds() / 60 + now.getMinutes()) / 60) * 360;
+    var color = "#f1f1f1";
+    var deg =  (remaining / 60 / 60 / 1000 * 360); 
+    var gradient = "conic-gradient(from " +startDeg + "deg, "+color+" " + deg  + "deg, white " + deg + "deg)"
+    document.body.style.background = "red";
+    console.log(document.body.style.background, gradient)
+  }
+  
+  document.body.className = "countdown";
+  interval = setInterval(update, 1000);
+  update();
+}
+
+
+
+startFromHash()
+window.onhashchange = startFromHash;
+
+function startFromHash() {
+  var hash = location.hash;
+  if (hash) {
+    console.log("using hash", hash)
+    countdown(hash.substring(1));
+
+  }
+}
+
+
+
+
+
+
+</script>
